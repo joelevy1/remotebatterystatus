@@ -5,7 +5,7 @@ import machine
 import urequests
 import os
 
-joe_var = "hi"
+#version number is 1.2
 VERSION_FILE = "version"
 UPDATE_URL = "https://raw.githubusercontent.com/joelevy1/remotebatterystatus/main/main.py"
 led = machine.Pin("LED", machine.Pin.OUT)
@@ -41,9 +41,6 @@ def fetch_vars(retries=3):
             time.sleep(1)
     print("Failed to fetch variables after retries")
     return None
-
-
-
 
 
 def get_local_version():
@@ -232,7 +229,16 @@ def main():
             print("Variables from Google Sheets:")
             for key, val in vars_from_sheet.items():
                 print(f"  {key}: {val}")
-
+       
+        # Update sleep time from sheet
+        sleep_seconds = vars_from_sheet.get("Sleep-seconds")
+        if sleep_seconds is not None:
+        try:
+            SLEEP_MS = int(float(sleep_seconds) * 1000)
+            print(f"Updated sleep time to {SLEEP_MS} ms")
+        except ValueError:
+            print(f"Invalid Sleep-seconds value: {sleep_seconds}, using default {SLEEP_MS}")
+            
             sheet_version = str(vars_from_sheet.get("Version", "0.0"))
             print ("Sheet version = " + str(sheet_version))
             check_for_update(sheet_version)
@@ -271,4 +277,5 @@ def main():
 main()
 #    time.sleep(300)
 #    time.sleep(5)
+
 
