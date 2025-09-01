@@ -5,7 +5,7 @@ import machine
 import urequests
 import os
 
-JOE_VAR = "HI"
+joe_var = "hi"
 VERSION_FILE = "version"
 UPDATE_URL = "https://raw.githubusercontent.com/joelevy1/remotebatterystatus/main/main.py"
 led = machine.Pin("LED", machine.Pin.OUT)
@@ -55,12 +55,15 @@ def get_local_version():
 
 def set_local_version(version):
     try:
+        # ensure we have a string
+        version_str = str(version)
         with open(VERSION_FILE, "w") as f:
-            f.write(version)
-            f.flush()        # force write to flash
-            os.sync()        # ensure filesystem sync
+            f.write(version_str)
+            f.flush()      # force write to internal buffer
+        os.sync()           # ensure filesystem is fully written to flash
     except Exception as e:
         print("Failed to write version file:", e)
+
 
 def download_new_version(url):
     try:
@@ -276,4 +279,3 @@ def main():
 main()
 #    time.sleep(300)
 #    time.sleep(5)
-
