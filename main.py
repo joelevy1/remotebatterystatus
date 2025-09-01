@@ -207,6 +207,7 @@ def urlencode(params):
 
 
 def main():
+    global SLEEP_MS
     time.sleep(1)  # 
     led_green.value(1)
     led_blue.value(0)
@@ -281,6 +282,7 @@ def main():
 main()
 #    time.sleep(300)
 #    time.sleep(5)
+
 
 
 
