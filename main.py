@@ -5,7 +5,7 @@ import machine
 import urequests
 import os
 
-#version number is 1.4
+#version number is 1.5
 VERSION_FILE = "version"
 UPDATE_URL = "https://raw.githubusercontent.com/joelevy1/remotebatterystatus/main/main.py"
 led = machine.Pin("LED", machine.Pin.OUT)
@@ -230,14 +230,15 @@ def main():
             for key, val in vars_from_sheet.items():
                 print(f"  {key}: {val}")
        
-            # Update sleep time from sheet
-            sleep_seconds = vars_from_sheet.get("Sleep-seconds")
-            if sleep_seconds is not None:
-                try:
-                    sleep_sec = int(vars_from_sheet.get("Sleep-seconds", SLEEP_MS // 1000))
-                    SLEEP_MS = sleep_sec * 1000
-                except Exception as e:
-                    print("Failed to update SLEEP_MS from sheet:", e)
+            #Update sleep time from sheet
+            sleep_ms = SLEEP_MS  # default fallback
+            try:
+                sleep_sec = int(vars_from_sheet.get("Sleep-seconds", SLEEP_MS // 1000))
+                sleep_ms = sleep_sec * 1000
+                print("Updated sleep time to", sleep_ms, "ms")
+            except Exception as e:
+                print("Failed to update sleep time from sheet:", e)
+            SLEEP_MS = sleep_ms  # assign the updated value
             
             #check for updates
             sheet_version = str(vars_from_sheet.get("Version", "0.0"))
@@ -280,6 +281,7 @@ def main():
 main()
 #    time.sleep(300)
 #    time.sleep(5)
+
 
 
 
