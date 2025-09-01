@@ -213,6 +213,7 @@ def main():
     wlan, attempts = connect_wifi()
     fail_count = get_fail_count()
     temp_f = read_temperature_f()
+    local_version = get_local_version()  
 
 
     if wlan is None or not wlan.isconnected():
@@ -256,6 +257,7 @@ def main():
             "Engine_Battery": "14.4",
             "Engine_Solar": "13.9",
             "House_Solar": "12.3"
+            "Local_Version": local_version
         }
         result = log_to_google(data)
         print("Google Sheets response:", result)
@@ -276,6 +278,7 @@ def main():
 main()
 #    time.sleep(300)
 #    time.sleep(5)
+
 
 
 
