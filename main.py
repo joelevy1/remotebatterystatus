@@ -5,7 +5,7 @@ import machine
 import urequests
 import os
 
-#version number is 1.3
+#version number is 1.4
 VERSION_FILE = "version"
 UPDATE_URL = "https://raw.githubusercontent.com/joelevy1/remotebatterystatus/main/main.py"
 led = machine.Pin("LED", machine.Pin.OUT)
@@ -214,7 +214,7 @@ def main():
     wlan, attempts = connect_wifi()
     fail_count = get_fail_count()
     temp_f = read_temperature_f()
-
+    local_version = get_local_version()  # fetch local version
 
     if wlan is None or not wlan.isconnected():
         # Wi-Fi failed
@@ -258,7 +258,8 @@ def main():
             "House_Battery": "13.4",
             "Engine_Battery": "14.4",
             "Engine_Solar": "13.9",
-            "House_Solar": "12.3"
+            "House_Solar": "12.3",
+            "Local_Version": local_version
         }
         result = log_to_google(data)
         print("Google Sheets response:", result)
@@ -279,6 +280,7 @@ def main():
 main()
 #    time.sleep(300)
 #    time.sleep(5)
+
 
 
 
