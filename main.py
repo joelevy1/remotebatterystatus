@@ -234,10 +234,12 @@ def main():
         sleep_seconds = vars_from_sheet.get("Sleep-seconds")
         if sleep_seconds is not None:
         try:
-            SLEEP_MS = int(float(sleep_seconds) * 1000)
-            print(f"Updated sleep time to {SLEEP_MS} ms")
-        except ValueError:
-            print(f"Invalid Sleep-seconds value: {sleep_seconds}, using default {SLEEP_MS}")
+            sleep_sec = int(vars_from_sheet.get("Sleep-seconds", SLEEP_MS // 1000))
+            SLEEP_MS = sleep_sec * 1000
+        except Exception as e:
+            print("Failed to update SLEEP_MS from sheet:", e)
+
+
             
             sheet_version = str(vars_from_sheet.get("Version", "0.0"))
             print ("Sheet version = " + str(sheet_version))
@@ -278,6 +280,7 @@ def main():
 main()
 #    time.sleep(300)
 #    time.sleep(5)
+
 
 
 
