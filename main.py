@@ -57,8 +57,10 @@ def set_local_version(version):
     try:
         with open(VERSION_FILE, "w") as f:
             f.write(version)
-    except:
-        pass
+            f.flush()        # force write to flash
+            os.sync()        # ensure filesystem sync
+    except Exception as e:
+        print("Failed to write version file:", e)
 
 def download_new_version(url):
     try:
@@ -274,3 +276,4 @@ def main():
 main()
 #    time.sleep(300)
 #    time.sleep(5)
+
