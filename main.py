@@ -136,14 +136,6 @@ def read_temperature_f():
     temp_f = temp_c * 9 / 5 + 32
     return round(temp_f, 1)
 
-
-def flash_led(times):
-    for _ in range(times):
-        led.value(1)  # LED on
-        time.sleep(.3)
-        led.value(0)  # LED off
-        time.sleep(.3)
-
 def connect_wifi(max_attempts=25):
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
@@ -241,7 +233,7 @@ def main():
             for key, val in vars_from_sheet.items():
                 print(f"  {key}: {val}")
 
-            sheet_version = vars_from_sheet.get("Version", "0.0")
+            sheet_version = str(vars_from_sheet.get("Version", "0.0"))
             print ("Sheet version = " + str(sheet_version))
             check_for_update(sheet_version)
         else:
@@ -279,3 +271,4 @@ def main():
 main()
 #    time.sleep(300)
 #    time.sleep(5)
+
