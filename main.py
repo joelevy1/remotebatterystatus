@@ -55,11 +55,12 @@ def set_local_version(version):
         # ensure we have a string
         version_str = str(version)
         with open(VERSION_FILE, "w") as f:
-            f.write(str(version_str)) 
+            f.write(version_str)
             f.flush()      # force write to internal buffer
-            os.sync()           # ensure filesystem is fully written to flash
+        os.sync()           # ensure filesystem is fully written to flash
     except Exception as e:
         print("Failed to write version file:", e)
+
 
 def download_new_version(url):
     try:
@@ -213,7 +214,6 @@ def main():
     wlan, attempts = connect_wifi()
     fail_count = get_fail_count()
     temp_f = read_temperature_f()
-    local_version = get_local_version()  
 
 
     if wlan is None or not wlan.isconnected():
@@ -230,20 +230,22 @@ def main():
             for key, val in vars_from_sheet.items():
                 print(f"  {key}: {val}")
        
-        # Update sleep time from sheet
-        sleep_seconds = vars_from_sheet.get("Sleep-seconds")
+            # Update sleep time from sheet
+            sleep_seconds = vars_from_sheet.get("Sleep-seconds")
             if sleep_seconds is not None:
                 try:
                     sleep_sec = int(vars_from_sheet.get("Sleep-seconds", SLEEP_MS // 1000))
                     SLEEP_MS = sleep_sec * 1000
                 except Exception as e:
                     print("Failed to update SLEEP_MS from sheet:", e)
-
+            
+            #check for updates
             sheet_version = str(vars_from_sheet.get("Version", "0.0"))
             print ("Sheet version = " + str(sheet_version))
             check_for_update(sheet_version)
+        
         else:
-            print("Skipping update check because fetch failed")
+            print("Skipping updating variables because fetch from google failed")
  
     
         #now update google
@@ -257,7 +259,6 @@ def main():
             "Engine_Battery": "14.4",
             "Engine_Solar": "13.9",
             "House_Solar": "12.3"
-            "Local_Version": local_version
         }
         result = log_to_google(data)
         print("Google Sheets response:", result)
@@ -278,10 +279,6 @@ def main():
 main()
 #    time.sleep(300)
 #    time.sleep(5)
-
-
-
-
 
 
 
