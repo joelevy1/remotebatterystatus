@@ -6,7 +6,6 @@ import urequests
 import os
 
 
-JOE_VAR = "Hi"
 VERSION_FILE = "version"
 UPDATE_URL = "https://raw.githubusercontent.com/joelevy1/remotebatterystatus/main/main.py"
 led = machine.Pin("LED", machine.Pin.OUT)
@@ -29,16 +28,23 @@ sensor_temp = machine.ADC(4)
 
 
 # Fetch variables from Google Sheets
-def fetch_vars():
-    try:
-        url_read = url_base + "action=read&"
-        response = urequests.get(url_read)
-        data = response.json()   # Parse JSON response
-        response.close()
-        return data
-    except Exception as e:
-        print("Error fetching:", e)
-        return None
+def fetch_vars(retries=3):
+    for attempt in range(retries):
+        try:
+            url_read = url_base + "action=read&"
+            response = urequests.get(url_read)
+            data = response.json()
+            response.close()
+            return data
+        except Exception as e:
+            print(f"Attempt {attempt+1} failed: {e}")
+            time.sleep(1)
+    print("Failed to fetch variables after retries")
+    return None
+
+
+
+
 
 def get_local_version():
     try:
@@ -228,9 +234,11 @@ def main():
             for key, val in vars_from_sheet.items():
                 print(f"  {key}: {val}")
 
-        # Pass version to check_for_update
-        sheet_version = vars_from_sheet.get("Version", "0.0")
-        check_for_update(sheet_version)
+            sheet_version = vars_from_sheet.get("Version", "0.0")
+            check_for_update(sheet_version)
+        else:
+            print("Skipping update check because fetch failed")
+ 
     
         #now update google
         ip = wlan.ifconfig()[0]
@@ -262,6 +270,4 @@ def main():
 #while True:
 main()
 #    time.sleep(300)
-
 #    time.sleep(5)
-
