@@ -8,7 +8,7 @@ import os
 
 JOE_VAR = "Hi"
 VERSION_FILE = "version"
-UPDATE_URL = "https://drive.google.com/uc?export=download&id=12TIO8Tp8rwHQmnpKe4RJRTkWoT03YiGQ" # link to new version
+UPDATE_URL = "https://raw.githubusercontent.com/joelevy1/remotebatterystatus/refs/heads/main/main.py" # link to new version
 led = machine.Pin("LED", machine.Pin.OUT)
 led_green = machine.Pin(15, machine.Pin.OUT)
 led_blue = machine.Pin(14, machine.Pin.OUT)
@@ -131,7 +131,7 @@ def flash_led(times):
         led.value(0)  # LED off
         time.sleep(.3)
 
-def connect_wifi(max_attempts=15):
+def connect_wifi(max_attempts=25):
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
 
@@ -262,4 +262,5 @@ def main():
 #while True:
 main()
 #    time.sleep(300)
+
 #    time.sleep(5)
