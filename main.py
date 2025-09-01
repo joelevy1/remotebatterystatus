@@ -5,7 +5,7 @@ import machine
 import urequests
 import os
 
-
+JOE_VAR = "HI"
 VERSION_FILE = "version"
 UPDATE_URL = "https://raw.githubusercontent.com/joelevy1/remotebatterystatus/main/main.py"
 led = machine.Pin("LED", machine.Pin.OUT)
@@ -65,10 +65,12 @@ def download_new_version(url):
         print("Downloading new version...")
         response = urequests.get(url)
         new_code = response.text
+        print("Downloaded snippet:")
+        print(new_code[:100])
         response.close()
         
         # Basic check: ensure it looks like Python code
-        if not new_code.strip().startswith(("def", "import", "#")):
+        if not new_code.strip().startswith(("def", "import", "#", "from")):
             print("Downloaded content does not look like Python code!")
             return False
         
@@ -117,7 +119,7 @@ def check_for_update(sheet_version):
             time.sleep(2)
             machine.reset()
     else:
-        print("Already up to date.")
+       print("Already up to date.")
 
 def read_temperature_f():
     # Read internal sensor in Celsius
@@ -235,6 +237,7 @@ def main():
                 print(f"  {key}: {val}")
 
             sheet_version = vars_from_sheet.get("Version", "0.0")
+            print ("Sheet version = " + str(sheet_version))
             check_for_update(sheet_version)
         else:
             print("Skipping update check because fetch failed")
