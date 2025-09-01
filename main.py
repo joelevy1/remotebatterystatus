@@ -55,12 +55,11 @@ def set_local_version(version):
         # ensure we have a string
         version_str = str(version)
         with open(VERSION_FILE, "w") as f:
-            f.write(version_str)
+            f.write(str(version_str)) 
             f.flush()      # force write to internal buffer
-        os.sync()           # ensure filesystem is fully written to flash
+            os.sync()           # ensure filesystem is fully written to flash
     except Exception as e:
         print("Failed to write version file:", e)
-
 
 def download_new_version(url):
     try:
@@ -277,5 +276,6 @@ def main():
 main()
 #    time.sleep(300)
 #    time.sleep(5)
+
 
 
