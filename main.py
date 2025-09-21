@@ -28,6 +28,9 @@ rtc = RTC() # RTC to store fail count across deep sleep
 adc_house_current = ADC(Pin(28))  # ACS712 for house solar current
 adc_house_voltage = ADC(Pin(27))  # Voltage divider for house battery
 
+relay_house = machine.Pin(22, machine.Pin.OUT)
+relay_house.value(1)  # HIGH = ACS712 connected
+
 # --- ACS712 calibration ---
 ACS_VCC = 5.0        # ACS712 supply
 SENSITIVITY = 0.100  # V/A for 20A module
@@ -305,7 +308,9 @@ def main():
         else:
             print("Skipping updating variables because fetch from google failed")
  
+        relay_house.value(0)  # LOW = ACS712 disconnected
         ZERO_HOUSE = calibrate_acs_zero(adc_house_current)
+        relay_house.value(1)  # HIGH = reconnect ACS712
         house_battery_voltage = round(read_battery_voltage(adc_house_voltage), 2)
         if house_battery_voltage < 10.0:
             print("House Battery disconnected or very low")
