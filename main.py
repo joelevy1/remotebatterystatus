@@ -69,8 +69,10 @@ def read_current(adc, zero):
 
 # --- function to read battery voltage ---
 def read_battery_voltage(adc):
+    """Convert divider voltage → battery voltage (with fixed calibration)."""
     v_adc = read_adc_voltage(adc)
-    return v_adc * (R1 + R2) / R2
+    v_batt = v_adc * (R1 + R2) / R2
+    return round(v_batt * 1.587, 2)   # <-- hard-coded calibration factor
 
 
 
