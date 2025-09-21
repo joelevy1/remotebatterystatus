@@ -1,9 +1,10 @@
-from machine import Pin, RTC
+from machine import ADC, Pin, RTC
 import time
 import network
 import machine
 import urequests
 import os
+
 
 #version number is 1.6
 VERSION_FILE = "version"
@@ -15,15 +16,58 @@ led_red = machine.Pin(13, machine.Pin.OUT)
 url_base = "https://script.google.com/macros/s/AKfycbwedmNVAOrmMc5MsHAiAJmoXPaVYCO2CTXSQS2e99bMg8v-F12ImHTUD_F_Uk1MZkQ4/exec?"
 FAIL_FILE = "fail_count.txt"
 SLEEP_MS = 300_000   # sleep time in milliseconds
-WIFI_SSID = "Levy-Guest"
-WIFI_PASSWORD = "welcomehome"
-#WIFI_SSID = "Seattle Boat"
-#WIFI_PASSWORD = "seaboats"
+KNOWN_NETWORKS = [
+    {"ssid": "Levy-Guest", "password": "welcomehome"},
+    {"ssid": "Seattle Boat", "password": "seaboats"},
+    {"ssid": "Joe's iPhone", "password": "123456789"},
+    # add more if needed
+]
 rtc = RTC() # RTC to store fail count across deep sleep
 
+# --- ADC pins ---
+adc_house_current = ADC(Pin(28))  # ACS712 for house solar current
+adc_house_voltage = ADC(Pin(27))  # Voltage divider for house battery
+
+# --- ACS712 calibration ---
+ACS_VCC = 5.0        # ACS712 supply
+SENSITIVITY = 0.100  # V/A for 20A module
+CALIB_SAMPLES = 200
+
+R1 = 330000.0  # voltage divider
+R2 = 68000.0
 
 sensor_temp = machine.ADC(4)
 
+# --- Helper functions ---
+def read_adc_voltage(adc):
+    return (adc.read_u16() / 65535.0) * 3.3
+
+def scale_acs_voltage(v_adc):
+    return v_adc * (ACS_VCC / 3.3)
+
+
+# --- calibrate zero current for ACS712 ---
+def calibrate_acs_zero(adc):
+    sum_v = 0.0
+    for i in range(CALIB_SAMPLES):
+        sum_v += scale_acs_voltage(read_adc_voltage(adc))
+        time.sleep(0.01)
+    zero = sum_v / CALIB_SAMPLES
+    return zero
+
+
+
+# --- function to read current ---
+def read_current(adc, zero):
+    v_sensor = scale_acs_voltage(read_adc_voltage(adc))
+    return (v_sensor - zero) / SENSITIVITY
+
+
+
+# --- function to read battery voltage ---
+def read_battery_voltage(adc):
+    v_adc = read_adc_voltage(adc)
+    return v_adc * (R1 + R2) / R2
 
 
 
@@ -142,27 +186,36 @@ def connect_wifi(max_attempts=25):
         led_blue.value(1) #blue light on for wifi on
         return wlan, 0
 
-    print("Connecting to Wi-Fi:", WIFI_SSID)
-    wlan.connect(WIFI_SSID, WIFI_PASSWORD)
+    print("Scanning for networks...")
+    available_networks = [net[0].decode('utf-8') for net in wlan.scan()]
+    print("Available networks:", available_networks)
 
-    attempts = 0
-    while not wlan.isconnected() and attempts < max_attempts:
-        led_blue.value(0)
-        time.sleep(.3)
-        led_blue.value(1)
-        time.sleep(.7)
-        attempts += 1
-        print(".", end="")  # show progress
+    for net in KNOWN_NETWORKS:
+        if net["ssid"] in available_networks:
+            print(f"Found known network {net['ssid']}, connecting...")
+            wlan.connect(net["ssid"], net["password"])
+            
+            attempts = 0
+            while not wlan.isconnected() and attempts < max_attempts:
+                led_blue.value(0)
+                time.sleep(0.3)
+                led_blue.value(1)
+                time.sleep(0.7)
+                attempts += 1
+                print(".", end="")
 
-    if wlan.isconnected():
-        led_blue.value(1)
-        print("\nConnected in ", attempts, " attempts! IP:", wlan.ifconfig()[0])
-        return wlan, attempts
-    else:
-        led_blue.value(0)
-        print("\nFailed to connect after {} attempts.".format(max_attempts))
-        wlan.active(False)  # turn off radio
-        return None, attempts
+            if wlan.isconnected():
+                print(f"\nConnected to {net['ssid']} in {attempts} attempts! IP: {wlan.ifconfig()[0]}")
+                led_blue.value(1)
+                return wlan, attempts
+            else:
+                print(f"\nFailed to connect to {net['ssid']}, trying next network...")
+
+    print("Could not connect to any known networks.")
+    wlan.active(False)
+    led_blue.value(0)
+    return None, 0
+
 
 def disconnect_wifi(wlan):
     if wlan:
@@ -216,6 +269,7 @@ def main():
     fail_count = get_fail_count()
     temp_f = read_temperature_f()
     local_version = get_local_version()  # fetch local version
+   
 
     if wlan is None or not wlan.isconnected():
         # Wi-Fi failed
@@ -224,6 +278,8 @@ def main():
         print(f"Wi-Fi failed {fail_count} times, skipping trying to upload to goolge")
     else:
         # Wi-Fi connected
+        connected_ssid = wlan.config('essid')  # get connected SSID safely
+        
         #first check varaibles and version number for possible update
         vars_from_sheet = fetch_vars()
         if vars_from_sheet:
@@ -249,6 +305,14 @@ def main():
         else:
             print("Skipping updating variables because fetch from google failed")
  
+        ZERO_HOUSE = calibrate_acs_zero(adc_house_current)
+        house_battery_voltage = round(read_battery_voltage(adc_house_voltage), 2)
+        if house_battery_voltage < 10.0:
+            print("House Battery disconnected or very low")
+            house_battery_voltage = "0"
+        house_solar_current = round(read_current(adc_house_current, ZERO_HOUSE), 2)
+
+
     
         #now update google
         ip = wlan.ifconfig()[0]
@@ -256,11 +320,12 @@ def main():
             "Rounds_to_Connect": fail_count,
             "Wifi_Attempts_This_Round": attempts,
             "IP_address": ip,
+            "SSID": connected_ssid,
             "Temp": temp_f,
-            "House_Battery": "13.4",
-            "Engine_Battery": "14.4",
-            "Engine_Solar": "13.9",
-            "House_Solar": "12.3",
+            "House_Battery": house_battery_voltage,
+            "Engine_Battery": "0",
+            "Engine_Solar": "0",
+            "House_Solar": house_solar_current,
             "Local_Version": local_version
         }
         result = log_to_google(data)
@@ -282,6 +347,7 @@ def main():
 main()
 #    time.sleep(300)
 #    time.sleep(5)
+
 
 
 
