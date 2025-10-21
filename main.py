@@ -381,24 +381,26 @@ def main():
     # Initialize I2C buses and sensors
     print("Initializing sensors...")
     try:
-        # INA260 sensors for battery monitoring (existing)
-        i2c0 = I2C(0, scl=Pin(17), sda=Pin(16), freq=400000)
+        # INA260 House battery - GP0 (SDA) and GP1 (SCL)
+        i2c0 = I2C(0, scl=Pin(1), sda=Pin(0), freq=400000)
+        
+        # INA260 Engine battery - GP2 (SDA) and GP3 (SCL)
         i2c1 = I2C(1, scl=Pin(3), sda=Pin(2), freq=400000)
         
         ina260_house = INA260(i2c0, address=0x40)
         ina260_engine = INA260(i2c1, address=0x40)
         
-        # INA219 sensor for Pico power monitoring (NEW - on GP0/GP1)
-        i2c_pico = I2C(0, scl=Pin(1), sda=Pin(0), freq=400000)
+        # INA219 Pico power monitor - GP4 (SDA) and GP5 (SCL)
+        i2c_pico = I2C(0, scl=Pin(5), sda=Pin(4), freq=400000)
         ina219_pico = INA219(i2c_pico, address=0x40)
         
         # Test I2C devices
         devices0 = i2c0.scan()
         devices1 = i2c1.scan()
         devices_pico = i2c_pico.scan()
-        print(f"I2C0 devices (House - GP16/GP17): {[hex(d) for d in devices0]}")
+        print(f"I2C0 devices (House - GP0/GP1): {[hex(d) for d in devices0]}")
         print(f"I2C1 devices (Engine - GP2/GP3): {[hex(d) for d in devices1]}")
-        print(f"I2C Pico (Power - GP0/GP1): {[hex(d) for d in devices_pico]}")
+        print(f"I2C Pico (Power - GP4/GP5): {[hex(d) for d in devices_pico]}")
         
     except Exception as e:
         print(f"Error initializing sensors: {e}")
